@@ -1,0 +1,132 @@
+// ====================
+// 📦 Prisma Schema
+// ====================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  PROVIDER
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum Weekday {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+model User {
+  id               String         @id @default(uuid())
+  userName         String         @db.VarChar(100)
+  email            String         @unique
+  password         String
+  isConfirmed      Boolean        @default(false)
+  isLogged         Boolean        @default(false)
+  role             Role           @default(CUSTOMER)
+  phone            String?        @db.VarChar(20)
+  address          String?        @db.Text
+  activationCode   String?        @unique
+  forgetCode       String?
+  // providedBookings Booking[]      @relation("ProviderBookings")
+  tokens           Token[]
+  services         Service[]      @relation("ProviderServices")
+  // bookings         Booking[]      @relation("CustomerBookings")
+  availabilities   Availability[]
+  reviews          Review[]       @relation("UserReviews")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  bookings         Booking[]      @relation("CustomerBookings") // هو المستخدم اللي بيحجز
+  providedBookings Booking[]      @relation("ProviderBookings")
+}
+
+model Token {
+  id        String   @id @default(uuid())
+  token     String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  isValid   Boolean  @default(true)
+  agent     String?
+  expiredAt String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  duration    Int // in minutes
+  price       Float
+  provider    User      @relation("ProviderServices", fields: [providerId], references: [id])
+  providerId  String
+  bookings    Booking[]
+  reviews     Review[]  @relation("ServiceReviews")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Availability {
+  id          String    @id @default(uuid())
+  provider    User      @relation(fields: [providerId], references: [id])
+  providerId  String
+  dayOfWeek   Weekday
+  startTime   String
+  endTime     String
+  isAvailable Boolean   @default(true)
+  Booking     Booking[]
+}
+
+model Booking {
+  id             String        @id @default(uuid())
+  user           User          @relation("CustomerBookings", fields: [userId], references: [id])
+  userId         String
+  service        Service       @relation(fields: [serviceId], references: [id])
+  serviceId      String
+  provider       User          @relation("ProviderBookings", fields: [providerId], references: [id])
+  providerId     String
+  availabilityId String
+  availability   Availability  @relation(fields: [availabilityId], references: [id])
+  notes          String?
+  date           DateTime
+  status         BookingStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  user      User     @relation("UserReviews", fields: [userId], references: [id])
+  userId    String
+  service   Service  @relation("ServiceReviews", fields: [serviceId], references: [id])
+  serviceId String
+  rating    Int // 1 to 5
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Log {
+  id        String   @id @default(uuid())
+  level     String
+  message   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+}
