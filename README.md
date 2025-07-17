@@ -4,7 +4,7 @@ Developed a robust backend API for booking appointments (clinics, salons, halls,
 
 - 🔐 Role-based Auth (admin, provider, customer)
 - 📅 Appointment slots & availability check
-- 📨 Email & SMS notifications
+- 📨 Email notifications
 - 🧾 Reviews system
 - 📦 Prisma ORM with PostgreSQL
 - 📄 Swagger API docs
